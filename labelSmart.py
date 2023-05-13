@@ -6,6 +6,8 @@ import json
 import cv2
 from xml.dom.minidom import Document
 import xml.etree.ElementTree as ET
+import torch
+import numpy as np
 
 class Label():
     def __init__(self, label_dir, img_dir, out_dir=None):
@@ -206,6 +208,14 @@ class Label():
 
 
     def label_replace(self, replaced_label, replaced_label_dir=None):
+        '''
+
+        :param replaced_label:
+        {'1':0,
+        '2':0}
+        :param replaced_label_dir: '/output'
+        :return:
+        '''
         if replaced_label_dir == None:
             replaced_label_dir = self.label_dir
 
@@ -323,7 +333,7 @@ class Label():
 
             print('Selected label process finish !!! Select number: ' + str(num_selected))
 
-    def emtpy_label (self):
+    def emtpy_label(self, empty_img_dir = None):
 
         out_dir = self.out_dir
         if out_dir == None:
@@ -335,8 +345,11 @@ class Label():
             if not os.path.exists(out_dir):
                 os.makedirs(out_dir)
 
-        target_txt_path = self.label_dir
-        img_dir = self.img_dir
+        target_txt_path = out_dir
+        if empty_img_dir == None:
+            img_dir = self.img_dir
+        else:
+            img_dir = empty_img_dir
 
         img_list = os.listdir(img_dir)
 
@@ -349,19 +362,83 @@ class Label():
 
         print('Total image number is ' + str(len(img_list)) + ' and empty label is ' + str(label_num))
 
+    def xywhn2xyxy(self, x, w, h, padw=0, padh=0):
+        y = x.clone() if isinstance(x, torch.Tensor) else np.copy(x)
+        y[:, 0] = w * (x[:, 0] - x[:, 2] / 2) + padw  # top left x
+        y[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
+        y[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
+        y[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh  # bottom right y
+        return y
+
+    def crop_img_yolo(self, img_path, label_path, save_path, img_id):
+        if os.path.getsize(label_path) != 0:
+            with open(label_path, 'r') as f:
+                lb = np.array([x.split() for x in f.read().strip().splitlines()], dtype=np.float32)  # labels
+                img = cv2.imread(img_path)
+
+                h, w = img.shape[:2]
+
+                lb[:, 1:] = self.xywhn2xyxy(lb[:, 1:], w, h, 0, 0)
+
+                n = 0
+                for _, x in enumerate(lb):
+                    class_id = int(x[0])
+                    if not os.path.exists(os.path.join(save_path,str(class_id))):
+                        os.makedirs(os.path.join(save_path,str(class_id)))
+                    x0 = int(x[1])
+                    y0 = int(x[2])
+                    x1 = int(x[3])
+                    y1 = int(x[4])
+                    crop = img[y0: y1, x0: x1]
+                    if crop.size != 0:
+                        save_img = str(img_id) + str(n) + '.JPG'
+                        save = os.path.join(save_path,str(class_id), save_img)
+                        cv2.imwrite(filename=save, img=crop)
+                        n += 1
+
+    def crop_img(self):
+        print('Label format should be YOLO format')
+        img_dir = self.img_dir
+        label_dir = self.label_dir
+
+        img_list = os.listdir(img_dir)
+
+        out_dir = self.out_dir
+        if out_dir == None:
+            out_dir = './out_dir/crop_images'
+            if not os.path.exists(out_dir):
+                os.makedirs(out_dir)
+        else:
+            out_dir = os.path.join(out_dir, 'crop_images')
+            if not os.path.exists(out_dir):
+                os.makedirs(out_dir)
+
+        for img in img_list:
+            img_path = os.path.join(img_dir,img)
+            label_name = img[:-4] + '.txt'
+
+            label_path = os.path.join(label_dir,label_name)
+            self.crop_img_yolo(img_path=img_path,label_path=label_path,save_path=out_dir, img_id=img[:-4])
+
+            print(str(img) + ' done !')
+
+
 
 class label_change():
-    def __init__(self, label_dir, img_dir, class_file, save_dir=None):
+    '''
+    # voc2yolo: class_file = ['bud']
+    # yolo2voc: class_file = {'0':'bud'}
+    '''
+    def __init__(self, label_dir, img_dir, save_dir=None):
         self.label_dir = label_dir
         self.img_dir = img_dir
-        self.class_file = class_file
         self.save_dir = save_dir
         if self.save_dir == None:
             out_dir = 'label_change'
             if not os.path.exists(out_dir):
                 os.makedirs(out_dir)
 
-        self.save_dir = out_dir
+            self.save_dir = out_dir
 
     def creatML2Yolo(self, json_file, img, class_file, save_path):
         w, h, d = img.shape
@@ -390,11 +467,11 @@ class label_change():
             yolo_txt.close()
 
 
-    def final_creatML2Yolo(self):
+    def final_creatML2Yolo(self,class_file):
         img_path = self.img_dir
         label_path = self.label_dir
         save_path = self.save_dir
-        class_file = self.class_file
+        class_file = class_file
 
         if not os.path.exists(save_path):
             os.makedirs(save_path)
@@ -415,10 +492,10 @@ class label_change():
             print('done !!!')
 
 
-    def yolo2voc(self):  # txt所在文件夹路径，xml文件保存路径，图片所在文件夹路径
+    def yolo2voc(self,class_file):  # txt所在文件夹路径，xml文件保存路径，图片所在文件夹路径
         """此函数用于将yolo格式txt标注文件转换为voc格式xml标注文件
         """
-        dic = self.class_file
+        dic = class_file
         picPath = self.img_dir
         txtPath = self.label_dir
         xmlPath = os.path.join(self.save_dir, 'yolo2voc')
@@ -578,12 +655,16 @@ class label_change():
         out_file.close()
 
 
-    def voc2yolo(self):
+    def voc2yolo(self,class_file):
+        '''
+        :param classes: ["class 1", 'class 2'] for example classes = ["boot", 'heading']
+        :return:
+        '''
         label_dir = self.label_dir
         save_dir = os.path.join(self.save_dir,'voc2yolo')
         if not os.path.exists(save_dir):
             os.makedirs(save_dir)
-        classes = self.class_file
+        classes = class_file
         label_list = os.listdir(label_dir)
         for label in label_list:
             label_path = os.path.join(label_dir, label)

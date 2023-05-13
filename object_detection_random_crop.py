@@ -8,7 +8,7 @@ import numpy as np
 
 
 class ObjectDetectionCrop():
-    def __init__(self, is_crop_img_bboxes=True,length=(640, 640)):
+    def __init__(self, is_crop_img_bboxes=True,length=(2048, 2048)):
 
         # 配置各个操作的属性
         self.is_crop_img_bboxes = is_crop_img_bboxes
@@ -305,7 +305,7 @@ def show_pic(img, bboxes=None):
 
 if __name__ == '__main__':
 
-    need_aug_num = 2  # 每张图片需要增强的次数
+    need_aug_num = 1  # 每张图片需要增强的次数
 
     is_endwidth_dot = True  # 文件是否以.jpg或者png结尾
 
@@ -315,8 +315,8 @@ if __name__ == '__main__':
 
     # 获取相关参数
     parser = argparse.ArgumentParser()
-    parser.add_argument('--source_img_path', type=str, default='crop/early_bud_img')
-    parser.add_argument('--source_xml_path', type=str, default='label_change/yolo2voc')
+    parser.add_argument('--source_img_path', type=str, default='I:\canola_2022_project/fpis_test/resize_test/test/15\images/test')
+    parser.add_argument('--source_xml_path', type=str, default='I:\canola_2022_project/fpis_test/resize_test/test/15/voc_label')
     parser.add_argument('--save_img_path', type=str, default='crop/images')
     parser.add_argument('--save_xml_path', type=str, default='crop/labels')
 

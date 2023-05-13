@@ -513,10 +513,10 @@ if __name__ == '__main__':
 
     # 获取相关参数
     parser = argparse.ArgumentParser()
-    parser.add_argument('--source_img_path', type=str, default='crop/images')
-    parser.add_argument('--source_xml_path', type=str, default='crop/labels')
-    parser.add_argument('--save_img_path', type=str, default='crop/images2')
-    parser.add_argument('--save_xml_path', type=str, default='crop/labels2')
+    parser.add_argument('--source_img_path', type=str, default='G:\My_Data/train_val_test/train_val\images')
+    parser.add_argument('--source_xml_path', type=str, default='G:\My_Data/train_val_test/train_val/voc_labels\yolo2voc')
+    parser.add_argument('--save_img_path', type=str, default='G:\My_Data/train_val_test/train_val/boost\images')
+    parser.add_argument('--save_xml_path', type=str, default='G:\My_Data/train_val_test/train_val/boost\labels')
     args = parser.parse_args()
     source_img_path = args.source_img_path  # 图片原始位置
     source_xml_path = args.source_xml_path  # xml的原始位置

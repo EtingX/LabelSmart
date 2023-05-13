@@ -1,54 +1,45 @@
 import labelSmart
 
-# class_file = ['bud']
-# label_method = labelSmart.label_change(img_dir='crop/final_images',
-#                                        label_dir='crop/final_labels',
-#                                        class_file=class_file)
+#
+# label_method = labelSmart.label_change(img_dir='G:\My_Data/train_val_test/train_val/boost\images',
+#                                 label_dir='G:\My_Data/train_val_test/train_val/boost\labels',
+#                                        save_dir='G:\My_Data/train_val_test/train_val/boost\yolo')
+#
+# class_file = ['bud','heading']
+#
+# label_method.voc2yolo(class_file)
+
+# label_method = labelSmart.Label(img_dir='G:/My_Data/train_val_test/train_val/update_final_data/processed/images',
+#                                 label_dir='G:/My_Data/train_val_test/train_val/update_final_data/processed/labels',
+#                                 out_dir='G:/My_Data/train_val_test/train_val/update_final_data/processed/outputs')
 # #
-# label_method.voc2yolo()
+# # replace_label = {'1':0,
+# #                  1:0
+# #                  }
+# #
+# # label_method.label_replace(replace_label)
+#
+# label_method.crop_img()
+#
+# # import torch
+# # print(torch.__version__)
+# #
+# # print(torch.version.cuda)
+# # print(torch.backends.cudnn.version())
 
 import os
-import shutil
 
-# label_dir = 'label_change/yolo2voc'
-# img_dir='I:\canola_2022_project\GH_detection\MyData\Image'
-# label_list = os.listdir(label_dir)
-#
-# for label in label_list:
-#     name = label[:-4]
-#     img_name = name + '.jpg'
-#
-#     start = os.path.join(img_dir,img_name)
-#     end = os.path.join('crop/early_bud_img',img_name)
-#     shutil.copy(start,end)
+image_dir = 'I:/birdcage_2022\wheat_synthesis_project\synthesis/heading'
 
-label_method = labelSmart.Label(img_dir='I:\canola_2022_project\GH_detection\My_TrainData\Image',
-                                label_dir='I:\canola_2022_project\GH_detection\My_TrainData\Label')
-label_method.no_label_search()
-label_method.no_img_search()
+out_dir = 'G:/My_Data/train_val_test/train_val/update_final_data/processed/outputs/crop_images/heading'
 
+image_list = os.listdir(image_dir)
 
-# import os
-#
-# label_dir = 'F:\yolov7_YX\My_data\labels/val'
-# for label in os.listdir(label_dir):
-#     new_label = []
-#     label_path = os.path.join(label_dir, label)
-#
-#     for line in open(label_path):
-#         line_list = line.split(' ')
-#         if line_list[0] == 5 or line_list[0] == '5':
-#             print(label)
+from random import sample
+from shutil import copy
+select_list = sample(image_list,1517)
 
-# import glob
-# import os
-#
-# label_list = glob.glob(os.path.join("split_dataset/val/Label", "*.txt"))
-# print(label_list)
-#
-# label_dir = 'split_dataset/val/Label'
-#
-# if len(os.listdir(label_dir)) != len(glob.glob(os.path.join(label_dir, "*.txt"))):
-#     print('Some files are not label file, this function only support YOLO label format !')
-# else:
-#     print('Replace label process start !')
+for img in select_list:
+    start_dir = os.path.join(image_dir,img)
+    end_dir = os.path.join(out_dir,img)
+    copy(start_dir,end_dir)
